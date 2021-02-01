@@ -16,28 +16,35 @@ A minimal forward authentication service that provides OAuth/SSO login and authe
 
 # Contents
 
-- [Releases](#releases)
-- [Usage](#usage)
-  - [Simple](#simple)
-  - [Advanced](#advanced)
-  - [Provider Setup](#provider-setup)
-- [Configuration](#configuration)
-  - [Overview](#overview)
-  - [Option Details](#option-details)
-- [Concepts](#concepts)
-  - [Forwarded Headers](#forwarded-headers)
-  - [User Restriction](#user-restriction)
-  - [Applying Authentication](#applying-authentication)
-    - [Global Authentication](#global-authentication)
-    - [Selective Ingress Authentication in Kubernetes](#selective-ingress-authentication-in-kubernetes)
-    - [Selective Container Authentication in Swarm](#selective-container-authentication-in-swarm)
-    - [Rules Based Authentication](#rules-based-authentication)
-  - [Operation Modes](#operation-modes)
-    - [Overlay Mode](#overlay-mode)
-    - [Auth Host Mode](#auth-host-mode)
-  - [Logging Out](#logging-out)
-- [Copyright](#copyright)
-- [License](#license)
+- [Traefik Forward Auth    ](#traefik-forward-auth----)
+  - [Why?](#why)
+- [Contents](#contents)
+  - [Releases](#releases)
+      - [Upgrade Guide](#upgrade-guide)
+  - [Usage](#usage)
+      - [Simple:](#simple)
+      - [Advanced:](#advanced)
+      - [Provider Setup](#provider-setup)
+        - [Google](#google)
+        - [OpenID Connect](#openid-connect)
+        - [Generic OAuth2](#generic-oauth2)
+  - [Configuration](#configuration)
+    - [Overview](#overview)
+    - [Option Details](#option-details)
+  - [Concepts](#concepts)
+    - [User Restriction](#user-restriction)
+    - [Forwarded Headers](#forwarded-headers)
+    - [Applying Authentication](#applying-authentication)
+      - [Global Authentication](#global-authentication)
+      - [Selective Ingress Authentication in Kubernetes](#selective-ingress-authentication-in-kubernetes)
+      - [Selective Container Authentication in Swarm](#selective-container-authentication-in-swarm)
+      - [Rules Based Authentication](#rules-based-authentication)
+    - [Operation Modes](#operation-modes)
+      - [Overlay Mode](#overlay-mode)
+      - [Auth Host Mode](#auth-host-mode)
+    - [Logging Out](#logging-out)
+  - [Copyright](#copyright)
+  - [License](#license)
 
 ## Releases
 
@@ -162,6 +169,7 @@ Application Options:
   --url-path=                                           Callback URL Path (default: /_oauth) [$URL_PATH]
   --secret=                                             Secret used for signing (required) [$SECRET]
   --whitelist=                                          Only allow given user ID, comma separated, can be set multiple times [$WHITELIST]
+  --port=                                               Port to listen on (default: 4181) [$PORT]
   --rule.<name>.<param>=                                Rule definitions, param can be: "action", "rule" or "provider"
 
 Google Provider:
