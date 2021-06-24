@@ -433,8 +433,6 @@ spec:
       - name: traefik-forward-auth
 ```
 
-Note: If using auth host mode, you must apply the middleware to your auth host ingress.
-
 See the examples directory for more examples.
 
 #### Selective Container Authentication in Swarm
@@ -448,8 +446,6 @@ whoami:
     - "traefik.http.routers.whoami.rule=Host(`whoami.example.com`)"
     - "traefik.http.routers.whoami.middlewares=traefik-forward-auth"
 ```
-
-Note: If using auth host mode, you must apply the middleware to the traefik-forward-auth container.
 
 See the examples directory for more examples.
 
