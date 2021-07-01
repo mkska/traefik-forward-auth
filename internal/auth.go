@@ -205,6 +205,7 @@ func MakeCookie(r *http.Request, user string) *http.Cookie {
 		Path:     "/",
 		Domain:   cookieDomain(r),
 		HttpOnly: true,
+		SameSite: http.SameSite(config.SameSiteCookie),
 		Secure:   !config.InsecureCookie,
 		Expires:  expires,
 	}
