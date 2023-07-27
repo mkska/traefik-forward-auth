@@ -175,7 +175,7 @@ Application Options:
   --config=                                             Path to config file [$CONFIG]
   --cookie-domain=                                      Domain to set auth cookie on, can be set multiple times [$COOKIE_DOMAIN]
   --insecure-cookie                                     Use insecure cookies [$INSECURE_COOKIE]
-  --same-site-cookie                                    Set SameSite cookie property (0: Default (1), 1: Lax, 2: Strict, 3: None)
+  --same-site-cookie                                    Set SameSite cookie property (1: Default, 2: Lax, 3: Strict, 4: None)
   --cookie-name=                                        Cookie Name (default: _forward_auth) [$COOKIE_NAME]
   --csrf-cookie-name=                                   CSRF Cookie Name (default: _forward_auth_csrf) [$CSRF_COOKIE_NAME]
   --default-action=[auth|allow]                         Default action (default: auth) [$DEFAULT_ACTION]
