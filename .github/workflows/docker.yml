@@ -28,7 +28,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v3
         with:
-          images: ghcr.io/beanow/traefik-forward-auth
+          images: ghcr.io/mkska/traefik-forward-auth
           # generate semver tags and 'latest' tag
           tags: |
             type=semver,pattern={{version}}
