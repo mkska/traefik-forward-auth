@@ -1,5 +1,6 @@
 
-# Traefik Forward Auth
+# Traefik Forward Auth [![CI](https://github.com/mkska/traefik-forward-auth/actions/workflows/ci.yml/badge.svg)](https://github.com/mkska/traefik-forward-auth/actions/workflows/ci.yml) [![Go Report Card](https://goreportcard.com/badge/github.com/mkska/traefik-forward-auth)]
+
 
 A minimal forward authentication service that provides OAuth/SSO login and authentication for the [traefik](https://github.com/containous/traefik) reverse proxy/load balancer.
 
