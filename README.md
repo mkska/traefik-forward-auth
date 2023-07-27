@@ -1,5 +1,5 @@
 
-# Traefik Forward Auth [![CI](https://github.com/mkska/traefik-forward-auth/actions/workflows/ci.yml/badge.svg)](https://github.com/mkska/traefik-forward-auth/actions/workflows/ci.yml) [![Go Report Card](https://goreportcard.com/badge/github.com/mkska/traefik-forward-auth)](https://goreportcard.com/report/github.com/thomseddon/traefik-forward-auth) ![Docker Pulls](https://img.shields.io/docker/pulls/thomseddon/traefik-forward-auth.svg) [![GitHub release](https://img.shields.io/github/release/mkska/traefik-forward-auth.svg)](https://GitHub.com/thomseddon/traefik-forward-auth/releases/)
+# Traefik Forward Auth [![CI](https://github.com/mkska/traefik-forward-auth/actions/workflows/ci.yml/badge.svg)](https://github.com/mkska/traefik-forward-auth/actions/workflows/ci.yml) [![Go Report Card](https://goreportcard.com/badge/github.com/mkska/traefik-forward-auth)](https://goreportcard.com/report/github.com/thomseddon/traefik-forward-auth) ![Docker Pulls](https://img.shields.io/docker/pulls/thomseddon/traefik-forward-auth.svg) [![GitHub release](https://img.shields.io/github/release/mkska/traefik-forward-auth.svg)](https://GitHub.com/mkska/traefik-forward-auth/releases/)
 
 
 A minimal forward authentication service that provides OAuth/SSO login and authentication for the [traefik](https://github.com/containous/traefik) reverse proxy/load balancer.
