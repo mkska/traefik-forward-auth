@@ -3,6 +3,8 @@ package provider
 import (
 	"context"
 	"errors"
+	"fmt"
+
 	"github.com/coreos/go-oidc"
 	"golang.org/x/oauth2"
 )
@@ -80,7 +82,7 @@ func (o *OIDC) ExchangeCode(redirectURI, code string) (string, error) {
 }
 
 // GetUser uses the given token and returns a complete provider.User object
-func (o *OIDC) GetUser(token, _ string) (string, error) {
+func (o *OIDC) GetUser(token, UserPath string) (string, error) {
 	// Parse & Verify ID Token
 	idToken, err := o.verifier.Verify(o.ctx, token)
 	if err != nil {
@@ -88,10 +90,13 @@ func (o *OIDC) GetUser(token, _ string) (string, error) {
 	}
 
 	// Extract custom claims
-	var user User
-	if err := idToken.Claims(&user); err != nil {
+	var claims map[string]interface{}
+	if err := idToken.Claims(&claims); err != nil {
 		return "", err
 	}
 
-	return user.Email, nil
+	if claims[UserPath] == nil {
+		return "", fmt.Errorf("no such user path: '%s' in the Claims", UserPath)
+	}
+	return claims[UserPath].(string), nil
 }

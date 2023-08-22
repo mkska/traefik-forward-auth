@@ -105,7 +105,7 @@ func TestOIDCExchangeCode(t *testing.T) {
 	assert.Equal("id_123456789", token)
 }
 
-func TestOIDCGetUser(t *testing.T) {
+func TestOIDCGetUserDefault(t *testing.T) {
 	assert := assert.New(t)
 
 	provider, server, serverURL, key := setupOIDCTest(t, nil)
@@ -122,9 +122,32 @@ func TestOIDCGetUser(t *testing.T) {
 	}`))
 
 	// Get user
-	user, err := provider.GetUser(token, "")
+	user, err := provider.GetUser(token, "email")
 	assert.Nil(err)
 	assert.Equal("example@example.com", user)
+}
+
+func TestOIDCGetUserCustom(t *testing.T) {
+	assert := assert.New(t)
+
+	provider, server, serverURL, key := setupOIDCTest(t, nil)
+	defer server.Close()
+
+	// Generate JWT
+	token := key.sign(t, []byte(`{
+		"iss": "`+serverURL.String()+`",
+		"exp":`+strconv.FormatInt(time.Now().Add(time.Hour).Unix(), 10)+`,
+		"aud": "idtest",
+		"sub": "1",
+		"email": "example@example.com",
+		"email_verified": true,
+		"customField": "customValue"
+	}`))
+
+	// Get user
+	user, err := provider.GetUser(token, "customField")
+	assert.Nil(err)
+	assert.Equal("customValue", user)
 }
 
 // Utils
