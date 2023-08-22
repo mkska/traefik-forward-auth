@@ -160,6 +160,42 @@ func TestServerAuthHandlerValid(t *testing.T) {
 	assert.Equal([]string{"test@example.com"}, users, "X-Forwarded-User header should match user")
 }
 
+func TestServerAuthHandlerTrustedIP_trusted(t *testing.T) {
+	assert := assert.New(t)
+	config = newDefaultConfig()
+
+	// Should allow valid request email
+	req := newHTTPRequest("GET", "http://example.com/foo")
+	req.Header.Set("X-Forwarded-For", "127.0.0.2")
+
+	res, _ := doHttpRequest(req, nil)
+	assert.Equal(200, res.StatusCode, "trusted ip should be allowed")
+}
+
+func TestServerAuthHandlerTrustedIP_notTrusted(t *testing.T) {
+	assert := assert.New(t)
+	config = newDefaultConfig()
+
+	// Should allow valid request email
+	req := newHTTPRequest("GET", "http://example.com/foo")
+	req.Header.Set("X-Forwarded-For", "127.0.0.1")
+
+	res, _ := doHttpRequest(req, nil)
+	assert.Equal(307, res.StatusCode, "untrusted ip should not be allowed")
+}
+
+func TestServerAuthHandlerTrustedIP_invalidAddress(t *testing.T) {
+	assert := assert.New(t)
+	config = newDefaultConfig()
+
+	// Should allow valid request email
+	req := newHTTPRequest("GET", "http://example.com/foo")
+	req.Header.Set("X-Forwarded-For", "127.0")
+
+	res, _ := doHttpRequest(req, nil)
+	assert.Equal(307, res.StatusCode, "invalid ip should not be allowed")
+}
+
 func TestServerAuthCallback(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
@@ -186,26 +222,26 @@ func TestServerAuthCallback(t *testing.T) {
 
 	// Should catch invalid csrf cookie
 	nonce := "12345678901234567890123456789012"
-	req = newHTTPRequest("GET", "http://example.com/_oauth?state="+nonce+":http://redirect")
+	req = newHTTPRequest("GET", "http://example.com/_oauth?state="+nonce+":http://example.com")
 	c := MakeCSRFCookie(req, "nononononononononononononononono")
 	res, _ = doHttpRequest(req, c)
 	assert.Equal(401, res.StatusCode, "auth callback with invalid cookie shouldn't be authorised")
 
 	// Should catch invalid provider cookie
-	req = newHTTPRequest("GET", "http://example.com/_oauth?state="+nonce+":invalid:http://redirect")
+	req = newHTTPRequest("GET", "http://example.com/_oauth?state="+nonce+":invalid:http://example.com")
 	c = MakeCSRFCookie(req, nonce)
 	res, _ = doHttpRequest(req, c)
 	assert.Equal(401, res.StatusCode, "auth callback with invalid provider shouldn't be authorised")
 
 	// Should redirect valid request
-	req = newHTTPRequest("GET", "http://example.com/_oauth?state="+nonce+":google:http://redirect")
+	req = newHTTPRequest("GET", "http://example.com/_oauth?state="+nonce+":google:http://example.com")
 	c = MakeCSRFCookie(req, nonce)
 	res, _ = doHttpRequest(req, c)
 	require.Equal(307, res.StatusCode, "valid auth callback should be allowed")
 
 	fwd, _ := res.Location()
 	assert.Equal("http", fwd.Scheme, "valid request should be redirected to return url")
-	assert.Equal("redirect", fwd.Host, "valid request should be redirected to return url")
+	assert.Equal("example.com", fwd.Host, "valid request should be redirected to return url")
 	assert.Equal("", fwd.Path, "valid request should be redirected to return url")
 }
 
@@ -228,7 +264,7 @@ func TestServerAuthCallbackExchangeFailure(t *testing.T) {
 	}
 
 	// Should handle failed code exchange
-	req := newDefaultHttpRequest("/_oauth?state=12345678901234567890123456789012:google:http://redirect")
+	req := newDefaultHttpRequest("/_oauth?state=12345678901234567890123456789012:google:http://example.com")
 	c := MakeCSRFCookie(req, "12345678901234567890123456789012")
 	res, _ := doHttpRequest(req, c)
 	assert.Equal(503, res.StatusCode, "auth callback should handle failed code exchange")
@@ -255,7 +291,7 @@ func TestServerAuthCallbackUserFailure(t *testing.T) {
 	}
 
 	// Should handle failed user request
-	req := newDefaultHttpRequest("/_oauth?state=12345678901234567890123456789012:google:http://redirect")
+	req := newDefaultHttpRequest("/_oauth?state=12345678901234567890123456789012:google:http://example.com")
 	c := MakeCSRFCookie(req, "12345678901234567890123456789012")
 	res, _ := doHttpRequest(req, c)
 	assert.Equal(503, res.StatusCode, "auth callback should handle failed user request")
@@ -281,7 +317,7 @@ func TestServerLogout(t *testing.T) {
 	require.Less(cookie.Expires.Local().Unix(), time.Now().Local().Unix()-50, "cookie should have expired")
 
 	// Test with redirect
-	config.LogoutRedirect = "http://redirect/path"
+	config.LogoutRedirect = "http://example.com/path"
 	req = newDefaultHttpRequest("/_oauth/logout")
 	res, _ = doHttpRequest(req, nil)
 	require.Equal(307, res.StatusCode, "should return a 307")
@@ -299,7 +335,7 @@ func TestServerLogout(t *testing.T) {
 	fwd, _ := res.Location()
 	require.NotNil(fwd)
 	assert.Equal("http", fwd.Scheme, "valid request should be redirected to return url")
-	assert.Equal("redirect", fwd.Host, "valid request should be redirected to return url")
+	assert.Equal("example.com", fwd.Host, "valid request should be redirected to return url")
 	assert.Equal("/path", fwd.Path, "valid request should be redirected to return url")
 
 }
@@ -556,6 +592,7 @@ func newDefaultConfig() *Config {
 	config, _ = NewConfig([]string{
 		"--providers.google.client-id=id",
 		"--providers.google.client-secret=secret",
+		"--trusted-ip-address=127.0.0.2",
 	})
 
 	// Setup the google providers without running all the config validation
@@ -576,5 +613,6 @@ func newHTTPRequest(method, target string) *http.Request {
 	r.Header.Add("X-Forwarded-Proto", u.Scheme)
 	r.Header.Add("X-Forwarded-Host", u.Host)
 	r.Header.Add("X-Forwarded-Uri", u.RequestURI())
+	r.Header.Add("X-Forwarded-For", "127.0.0.1")
 	return r
 }

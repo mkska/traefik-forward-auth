@@ -40,6 +40,8 @@ func TestConfigDefaults(t *testing.T) {
 	assert.Equal(c.Port, 4181)
 
 	assert.Equal("select_account", c.Providers.Google.Prompt)
+
+	assert.Len(c.TrustedIPAddresses, 0)
 }
 
 func TestConfigParseArgs(t *testing.T) {
@@ -106,6 +108,17 @@ func TestConfigParseRuleError(t *testing.T) {
 	}
 	// Check rules
 	assert.Equal(map[string]*Rule{}, c.Rules)
+}
+
+func TestConfigCommaSeperated(t *testing.T) {
+	assert := assert.New(t)
+	c, err := NewConfig([]string{
+		"--whitelist=test@test.com,test2@test2.com",
+	})
+	require.Nil(t, err)
+
+	expected1 := CommaSeparatedList{"test@test.com", "test2@test2.com"}
+	assert.Equal(expected1, c.Whitelist, "should read legacy comma separated list whitelist")
 }
 
 func TestConfigFlagBackwardsCompatability(t *testing.T) {
@@ -408,4 +421,32 @@ func TestConfigCommaSeparatedList(t *testing.T) {
 	marshal, err := list.MarshalFlag()
 	assert.Nil(err)
 	assert.Equal("one,two", marshal, "should marshal back to comma sepearated list")
+}
+
+func TestConfigTrustedNetworks(t *testing.T) {
+	assert := assert.New(t)
+
+	c, err := NewConfig([]string{
+		"--trusted-ip-address=1.2.3.4",
+		"--trusted-ip-address=30.1.0.0/16",
+	})
+
+	assert.NoError(err)
+
+	table := map[string]bool{
+		"1.2.3.3":      false,
+		"1.2.3.4":      true,
+		"1.2.3.5":      false,
+		"192.168.1.1":  false,
+		"30.1.0.1":     true,
+		"30.1.255.254": true,
+		"30.2.0.1":     false,
+	}
+
+	for in, want := range table {
+		got, err := c.IsIPAddressAuthenticated(in)
+		assert.NoError(err)
+		assert.Equal(want, got, "ip address: %s", in)
+	}
+
 }

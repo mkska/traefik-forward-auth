@@ -7,14 +7,15 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net"
 	"os"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/jordemort/traefik-forward-auth/internal/provider"
 	"github.com/thomseddon/go-flags"
-	"github.com/thomseddon/traefik-forward-auth/internal/provider"
 )
 
 var config *Config
@@ -33,13 +34,14 @@ type Config struct {
 	CSRFCookieName         string               `long:"csrf-cookie-name" env:"CSRF_COOKIE_NAME" default:"_forward_auth_csrf" description:"CSRF Cookie Name"`
 	DefaultAction          string               `long:"default-action" env:"DEFAULT_ACTION" default:"auth" choice:"auth" choice:"allow" description:"Default action"`
 	DefaultProvider        string               `long:"default-provider" env:"DEFAULT_PROVIDER" default:"google" choice:"google" choice:"oidc" choice:"generic-oauth" description:"Default provider"`
-	Domains                CommaSeparatedList   `long:"domain" env:"DOMAIN" env-delim:"," description:"Only allow given email domains, can be set multiple times"`
+	Domains                CommaSeparatedList   `long:"domain" env:"DOMAIN" env-delim:"," description:"Only allow given email domains, comma separated, can be set multiple times"`
 	LifetimeString         int                  `long:"lifetime" env:"LIFETIME" default:"43200" description:"Lifetime in seconds"`
 	LogoutRedirect         string               `long:"logout-redirect" env:"LOGOUT_REDIRECT" description:"URL to redirect to following logout"`
 	MatchWhitelistOrDomain bool                 `long:"match-whitelist-or-domain" env:"MATCH_WHITELIST_OR_DOMAIN" description:"Allow users that match *either* whitelist or domain (enabled by default in v3)"`
 	Path                   string               `long:"url-path" env:"URL_PATH" default:"/_oauth" description:"Callback URL Path"`
 	SecretString           string               `long:"secret" env:"SECRET" description:"Secret used for signing (required)" json:"-"`
-	Whitelist              CommaSeparatedList   `long:"whitelist" env:"WHITELIST" env-delim:"," description:"Only allow given email addresses, can be set multiple times"`
+	UserPath               string               `long:"user-id-path" env:"USER_ID_PATH" default:"email" description:"Dot notation path of a UserID for use with whitelist and X-Forwarded-User"`
+	Whitelist              CommaSeparatedList   `long:"whitelist" env:"WHITELIST" env-delim:"," description:"Only allow given UserID, comma separated, can be set multiple times"`
 	Port                   int                  `long:"port" env:"PORT" default:"4181" description:"Port to listen on"`
 
 	Providers provider.Providers `group:"providers" namespace:"providers" env-namespace:"PROVIDERS"`
@@ -56,6 +58,9 @@ type Config struct {
 	ClientIdLegacy      string        `long:"client-id" env:"CLIENT_ID" description:"DEPRECATED - Use \"providers.google.client-id\""`
 	ClientSecretLegacy  string        `long:"client-secret" env:"CLIENT_SECRET" description:"DEPRECATED - Use \"providers.google.client-id\""  json:"-"`
 	PromptLegacy        string        `long:"prompt" env:"PROMPT" description:"DEPRECATED - Use \"providers.google.prompt\""`
+
+	TrustedIPAddresses []string `long:"trusted-ip-address" env:"TRUSTED_IP_ADDRESS" env-delim:"," description:"List of trusted IP addresses or IP networks (in CIDR notation) that are considered authenticated"`
+	trustedIPNetworks  []*net.IPNet
 }
 
 // NewGlobalConfig creates a new global config, parsed from command arguments
@@ -131,7 +136,39 @@ func NewConfig(args []string) (*Config, error) {
 	c.Secret = []byte(c.SecretString)
 	c.Lifetime = time.Second * time.Duration(c.LifetimeString)
 
+	if err := c.parseTrustedNetworks(); err != nil {
+		return nil, err
+	}
+
 	return c, nil
+}
+
+func (c *Config) parseTrustedNetworks() error {
+	c.trustedIPNetworks = make([]*net.IPNet, len(c.TrustedIPAddresses))
+
+	for i := range c.TrustedIPAddresses {
+		addr := c.TrustedIPAddresses[i]
+		if strings.Contains(addr, "/") {
+			_, net, err := net.ParseCIDR(addr)
+			if err != nil {
+				return err
+			}
+			c.trustedIPNetworks[i] = net
+			continue
+		}
+
+		ipAddr := net.ParseIP(addr)
+		if ipAddr == nil {
+			return fmt.Errorf("invalid ip address: '%s'", ipAddr)
+		}
+
+		c.trustedIPNetworks[i] = &net.IPNet{
+			IP:   ipAddr,
+			Mask: []byte{255, 255, 255, 255},
+		}
+	}
+
+	return nil
 }
 
 func (c *Config) parseFlags(args []string) error {
@@ -303,6 +340,22 @@ func (c *Config) GetConfiguredProvider(name string) (provider.Provider, error) {
 	return c.GetProvider(name)
 }
 
+//
+func (c *Config) IsIPAddressAuthenticated(address string) (bool, error) {
+	addr := net.ParseIP(address)
+	if addr == nil {
+		return false, fmt.Errorf("invalid ip address: '%s'", address)
+	}
+
+	for _, n := range c.trustedIPNetworks {
+		if n.Contains(addr) {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
 func (c *Config) providerConfigured(name string) bool {
 	// Check default provider
 	if name == c.DefaultProvider {
@@ -327,8 +380,7 @@ func (c *Config) setupProvider(name string) error {
 	}
 
 	// Setup
-	err = p.Setup()
-	if err != nil {
+	if err := p.Setup(); err != nil {
 		return err
 	}
 

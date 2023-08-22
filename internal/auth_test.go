@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jordemort/traefik-forward-auth/internal/provider"
 	"github.com/stretchr/testify/assert"
-	"github.com/thomseddon/traefik-forward-auth/internal/provider"
 )
 
 /**
@@ -62,29 +62,40 @@ func TestAuthValidateCookie(t *testing.T) {
 	assert.Equal("test@test.com", email, "valid request should return user email")
 }
 
-func TestAuthValidateEmail(t *testing.T) {
+func TestAuthValidateUser(t *testing.T) {
 	assert := assert.New(t)
 	config, _ = NewConfig([]string{})
 
 	// Should allow any with no whitelist/domain is specified
-	v := ValidateEmail("test@test.com", "default")
+	v := ValidateUser("test@test.com", "default")
 	assert.True(v, "should allow any domain if email domain is not defined")
-	v = ValidateEmail("one@two.com", "default")
+	v = ValidateUser("one@two.com", "default")
 	assert.True(v, "should allow any domain if email domain is not defined")
 
 	// Should allow matching domain
 	config.Domains = []string{"test.com"}
-	v = ValidateEmail("one@two.com", "default")
+	v = ValidateUser("one@two.com", "default")
 	assert.False(v, "should not allow user from another domain")
-	v = ValidateEmail("test@test.com", "default")
+	v = ValidateUser("test@test.com", "default")
 	assert.True(v, "should allow user from allowed domain")
+
+	// Should match regardless of domain case
+	config.Domains = []string{"test.com"}
+	v = ValidateUser("test@TeSt.com", "default")
+	assert.True(v, "should allow user from allowed domain, regardless of case")
+
+	// Should block non whitelisted email address
+	config.Domains = []string{}
+	config.Whitelist = []string{"test@test.com"}
+	v = ValidateUser("one@two.com", "default")
+	assert.False(v, "should not allow user not in whitelist")
 
 	// Should allow matching whitelisted email address
 	config.Domains = []string{}
 	config.Whitelist = []string{"test@test.com"}
-	v = ValidateEmail("one@two.com", "default")
+	v = ValidateUser("one@two.com", "default")
 	assert.False(v, "should not allow user not in whitelist")
-	v = ValidateEmail("test@test.com", "default")
+	v = ValidateUser("test@test.com", "default")
 	assert.True(v, "should allow user in whitelist")
 
 	// Should allow only matching email address when
@@ -92,11 +103,15 @@ func TestAuthValidateEmail(t *testing.T) {
 	config.Domains = []string{"example.com"}
 	config.Whitelist = []string{"test@test.com"}
 	config.MatchWhitelistOrDomain = false
-	v = ValidateEmail("one@two.com", "default")
+	v = ValidateUser("test@test.com", "default")
+	assert.True(v, "should allow user in whitelist")
+	v = ValidateUser("test@example.com", "default")
+	assert.False(v, "should not allow user from valid domain")
+	v = ValidateUser("one@two.com", "default")
 	assert.False(v, "should not allow user not in either")
-	v = ValidateEmail("test@example.com", "default")
+	v = ValidateUser("test@example.com", "default")
 	assert.False(v, "should not allow user from allowed domain")
-	v = ValidateEmail("test@test.com", "default")
+	v = ValidateUser("test@test.com", "default")
 	assert.True(v, "should allow user in whitelist")
 
 	// Should allow either matching domain or email address when
@@ -104,12 +119,14 @@ func TestAuthValidateEmail(t *testing.T) {
 	config.Domains = []string{"example.com"}
 	config.Whitelist = []string{"test@test.com"}
 	config.MatchWhitelistOrDomain = true
-	v = ValidateEmail("one@two.com", "default")
+	v = ValidateUser("one@two.com", "default")
 	assert.False(v, "should not allow user not in either")
-	v = ValidateEmail("test@example.com", "default")
+	v = ValidateUser("test@example.com", "default")
 	assert.True(v, "should allow user from allowed domain")
-	v = ValidateEmail("test@test.com", "default")
+	v = ValidateUser("test@test.com", "default")
 	assert.True(v, "should allow user in whitelist")
+	v = ValidateUser("test@example.com", "default")
+	assert.True(v, "should allow user from valid domain")
 
 	// Rule testing
 
@@ -118,11 +135,11 @@ func TestAuthValidateEmail(t *testing.T) {
 	config.Whitelist = []string{"test@test.com"}
 	config.Rules = map[string]*Rule{"test": NewRule()}
 	config.MatchWhitelistOrDomain = true
-	v = ValidateEmail("one@two.com", "test")
+	v = ValidateUser("one@two.com", "test")
 	assert.False(v, "should not allow user not in either")
-	v = ValidateEmail("test@example.com", "test")
+	v = ValidateUser("test@example.com", "test")
 	assert.True(v, "should allow user from allowed global domain")
-	v = ValidateEmail("test@test.com", "test")
+	v = ValidateUser("test@test.com", "test")
 	assert.True(v, "should allow user in global whitelist")
 
 	// Should allow matching domain in rule
@@ -132,12 +149,16 @@ func TestAuthValidateEmail(t *testing.T) {
 	config.Rules = map[string]*Rule{"test": rule}
 	rule.Domains = []string{"testrule.com"}
 	config.MatchWhitelistOrDomain = false
-	v = ValidateEmail("one@two.com", "test")
+	v = ValidateUser("one@two.com", "test")
 	assert.False(v, "should not allow user from another domain")
-	v = ValidateEmail("one@testglobal.com", "test")
+	v = ValidateUser("one@testglobal.com", "test")
 	assert.False(v, "should not allow user from global domain")
-	v = ValidateEmail("test@testrule.com", "test")
+	v = ValidateUser("test@testrule.com", "test")
 	assert.True(v, "should allow user from allowed domain")
+
+	// Should allow comma separated email
+	config.Whitelist = []string{"test@test.com", "test2@test2.com"}
+	v = ValidateUser("test2@test2.com", "default")
 
 	// Should allow matching whitelist in rule
 	config.Domains = []string{}
@@ -146,11 +167,11 @@ func TestAuthValidateEmail(t *testing.T) {
 	config.Rules = map[string]*Rule{"test": rule}
 	rule.Whitelist = []string{"test@testrule.com"}
 	config.MatchWhitelistOrDomain = false
-	v = ValidateEmail("one@two.com", "test")
+	v = ValidateUser("one@two.com", "test")
 	assert.False(v, "should not allow user from another domain")
-	v = ValidateEmail("test@testglobal.com", "test")
+	v = ValidateUser("test@testglobal.com", "test")
 	assert.False(v, "should not allow user from global domain")
-	v = ValidateEmail("test@testrule.com", "test")
+	v = ValidateUser("test@testrule.com", "test")
 	assert.True(v, "should allow user from allowed domain")
 
 	// Should allow only matching email address when
@@ -162,15 +183,15 @@ func TestAuthValidateEmail(t *testing.T) {
 	rule.Domains = []string{"examplerule.com"}
 	rule.Whitelist = []string{"test@testrule.com"}
 	config.MatchWhitelistOrDomain = false
-	v = ValidateEmail("one@two.com", "test")
+	v = ValidateUser("one@two.com", "test")
 	assert.False(v, "should not allow user not in either")
-	v = ValidateEmail("test@testglobal.com", "test")
+	v = ValidateUser("test@testglobal.com", "test")
 	assert.False(v, "should not allow user in global whitelist")
-	v = ValidateEmail("test@exampleglobal.com", "test")
+	v = ValidateUser("test@exampleglobal.com", "test")
 	assert.False(v, "should not allow user from global domain")
-	v = ValidateEmail("test@examplerule.com", "test")
+	v = ValidateUser("test@examplerule.com", "test")
 	assert.False(v, "should not allow user from allowed domain")
-	v = ValidateEmail("test@testrule.com", "test")
+	v = ValidateUser("test@testrule.com", "test")
 	assert.True(v, "should allow user in whitelist")
 
 	// Should allow either matching domain or email address when
@@ -182,16 +203,106 @@ func TestAuthValidateEmail(t *testing.T) {
 	rule.Domains = []string{"examplerule.com"}
 	rule.Whitelist = []string{"test@testrule.com"}
 	config.MatchWhitelistOrDomain = true
-	v = ValidateEmail("one@two.com", "test")
+	v = ValidateUser("one@two.com", "test")
 	assert.False(v, "should not allow user not in either")
-	v = ValidateEmail("test@testglobal.com", "test")
+	v = ValidateUser("test@testglobal.com", "test")
 	assert.False(v, "should not allow user in global whitelist")
-	v = ValidateEmail("test@exampleglobal.com", "test")
+	v = ValidateUser("test@exampleglobal.com", "test")
 	assert.False(v, "should not allow user from global domain")
-	v = ValidateEmail("test@examplerule.com", "test")
+	v = ValidateUser("test@examplerule.com", "test")
 	assert.True(v, "should allow user from allowed domain")
-	v = ValidateEmail("test@testrule.com", "test")
+	v = ValidateUser("test@testrule.com", "test")
 	assert.True(v, "should allow user in whitelist")
+}
+
+func TestAuthValidateRedirect(t *testing.T) {
+	assert := assert.New(t)
+	config, _ = NewConfig([]string{})
+
+	newRedirectRequest := func(urlStr string) *http.Request {
+		u, err := url.Parse(urlStr)
+		assert.Nil(err)
+
+		r, _ := http.NewRequest("GET", urlStr, nil)
+		r.Header.Add("X-Forwarded-Proto", u.Scheme)
+		r.Header.Add("X-Forwarded-Host", u.Host)
+		r.Header.Add("X-Forwarded-Uri", u.RequestURI())
+
+		return r
+	}
+
+	errStr := "Redirect host does not match request host (must match when not using auth host)"
+
+	_, err := ValidateRedirect(
+		newRedirectRequest("http://app.example.com/_oauth?state=123"),
+		"http://app.example.com.bad.com",
+	)
+	if assert.Error(err) {
+		assert.Equal(errStr, err.Error(), "Should not allow redirect to subdomain")
+	}
+
+	_, err = ValidateRedirect(
+		newRedirectRequest("http://app.example.com/_oauth?state=123"),
+		"http://app.example.combad.com",
+	)
+	if assert.Error(err) {
+		assert.Equal(errStr, err.Error(), "Should not allow redirect to overlapping domain")
+	}
+
+	_, err = ValidateRedirect(
+		newRedirectRequest("http://app.example.com/_oauth?state=123"),
+		"http://example.com",
+	)
+	if assert.Error(err) {
+		assert.Equal(errStr, err.Error(), "Should not allow redirect from subdomain")
+	}
+
+	_, err = ValidateRedirect(
+		newRedirectRequest("http://app.example.com/_oauth?state=123"),
+		"http://app.example.com/profile",
+	)
+	assert.Nil(err, "Should allow same domain")
+
+	//
+	// With Auth Host
+	//
+	config.AuthHost = "auth.example.com"
+	config.CookieDomains = []CookieDomain{*NewCookieDomain("example.com")}
+	errStr = "Redirect host does not match any expected hosts (should match cookie domain when using auth host)"
+
+	_, err = ValidateRedirect(
+		newRedirectRequest("http://app.example.com/_oauth?state=123"),
+		"http://app.example.com.bad.com",
+	)
+	if assert.Error(err) {
+		assert.Equal(errStr, err.Error(), "Should not allow redirect to subdomain")
+	}
+
+	_, err = ValidateRedirect(
+		newRedirectRequest("http://app.example.com/_oauth?state=123"),
+		"http://app.example.combad.com",
+	)
+	if assert.Error(err) {
+		assert.Equal(errStr, err.Error(), "Should not allow redirect to overlapping domain")
+	}
+
+	_, err = ValidateRedirect(
+		newRedirectRequest("http://auth.example.com/_oauth?state=123"),
+		"http://app.example.com/profile",
+	)
+	assert.Nil(err, "Should allow between subdomains when using auth host")
+
+	_, err = ValidateRedirect(
+		newRedirectRequest("http://auth.example.com/_oauth?state=123"),
+		"http://auth.example.com/profile",
+	)
+	assert.Nil(err, "Should allow same domain when using auth host")
+
+	_, err = ValidateRedirect(
+		newRedirectRequest("http://auth.example.com/_oauth?state=123"),
+		"http://example.com/profile",
+	)
+	assert.Nil(err, "Should allow from subdomain when using auth host")
 }
 
 func TestRedirectUri(t *testing.T) {

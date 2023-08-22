@@ -1,8 +1,29 @@
 
-# Traefik Forward Auth [![CI](https://github.com/mkska/traefik-forward-auth/actions/workflows/ci.yml/badge.svg)](https://github.com/mkska/traefik-forward-auth/actions/workflows/ci.yml) [![Go Report Card](https://goreportcard.com/badge/github.com/mkska/traefik-forward-auth)](https://goreportcard.com/report/github.com/thomseddon/traefik-forward-auth) ![Docker Pulls](https://img.shields.io/docker/pulls/thomseddon/traefik-forward-auth.svg) [![GitHub release](https://img.shields.io/github/release/mkska/traefik-forward-auth.svg)](https://GitHub.com/mkska/traefik-forward-auth/releases/)
+# Traefik Forward Auth [![CI](https://github.com/mkska/traefik-forward-auth/actions/workflows/ci.yml/badge.svg)](https://github.com/mkska/traefik-forward-auth/actions/workflows/ci.yml) [![Go Report Card](https://goreportcard.com/badge/github.com/mkska/traefik-forward-auth)]
 
 
 A minimal forward authentication service that provides OAuth/SSO login and authentication for the [traefik](https://github.com/containous/traefik) reverse proxy/load balancer.
+
+## Fork notes
+
+This is yet another fork of [thomseddon/traefik-forward-auth](https://github.com/thomseddon/traefik-forward-auth).
+I have merged several pull requests that have not (yet?) been merged upstream:
+
+- https://github.com/thomseddon/traefik-forward-auth/pull/77
+- https://github.com/thomseddon/traefik-forward-auth/pull/159
+- https://github.com/thomseddon/traefik-forward-auth/pull/281
+- https://github.com/thomseddon/traefik-forward-auth/pull/295
+- https://github.com/thomseddon/traefik-forward-auth/pull/327
+
+I have also updated all the dependencies, and switched to building with Go 1.19.
+The Dockerfile has been switched from Alpine to using the official Go container for building the binary and a [distroless](https://github.com/GoogleContainerTools/distroless) image for runtime.
+
+I wrote [a blog post](https://jordemort.dev/blog/single-sign-on-with-mastodon/) about how I use this.
+Note that I only use the Generic OAuth provider.
+I haven't tried using the other providers, but all the tests still pass.
+
+This version now builds against Traefik 2.9, so you should be able to use all of the latest matchers, but `ClientIP` does not appear to be working as you might expect.
+It seems to be a better bet to match against the `X-Forwarded-For` header.
 
 ## Why?
 
@@ -48,17 +69,13 @@ A minimal forward authentication service that provides OAuth/SSO login and authe
 
 ## Releases
 
-We recommend using the `2` tag on docker hub (`thomseddon/traefik-forward-auth:2`).
+Releases of this fork are published to the [GitHub Container Registry](https://github.com/jordemort/traefik-forward-auth/pkgs/container/traefik-forward-auth).
 
-You can also use the latest incremental releases found on [docker hub](https://hub.docker.com/r/thomseddon/traefik-forward-auth/tags) and [github](https://github.com/thomseddon/traefik-forward-auth/releases).
-
-ARM releases are also available on docker hub, just append `-arm` or `-arm64` to your desired released (e.g. `2-arm` or `2.1-arm64`).
-
-We also build binary files for usage without docker starting with releases after 2.2.0 You can find these as assets of the specific GitHub release.
+I currently only publish a `latest` tag.
 
 #### Upgrade Guide
 
-v2 was released in June 2019, whilst this is fully backwards compatible, a number of configuration options were modified, please see the [upgrade guide](https://github.com/thomseddon/traefik-forward-auth/wiki/v2-Upgrade-Guide) to prevent warnings on startup and ensure you are using the current configuration.
+This fork should be backwards-compatible with upstream releases.
 
 ## Usage
 
@@ -69,11 +86,9 @@ See below for instructions on how to setup your [Provider Setup](#provider-setup
 docker-compose.yml:
 
 ```yaml
-version: '3'
-
 services:
   traefik:
-    image: traefik:v2.2
+    image: traefik:v2.9
     command: --providers.docker
     ports:
       - "8085:80"
@@ -81,7 +96,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
 
   traefik-forward-auth:
-    image: thomseddon/traefik-forward-auth:2
+    image: ghcr.io/jordemort/traefik-forward-auth:latest
     environment:
       - PROVIDERS_GOOGLE_CLIENT_ID=your-client-id
       - PROVIDERS_GOOGLE_CLIENT_SECRET=your-client-secret
@@ -101,9 +116,9 @@ services:
 
 #### Advanced:
 
-Please see the examples directory for a more complete [docker-compose.yml](https://github.com/thomseddon/traefik-forward-auth/blob/master/examples/traefik-v2/swarm/docker-compose.yml) or [kubernetes/simple-separate-pod](https://github.com/thomseddon/traefik-forward-auth/blob/master/examples/traefik-v2/kubernetes/simple-separate-pod/).
+Please see the examples directory for a more complete [docker-compose.yml](examples/traefik-v2/swarm/docker-compose.yml) or [kubernetes/simple-separate-pod](examples/traefik-v2/kubernetes/simple-separate-pod/).
 
-Also in the examples directory is [docker-compose-auth-host.yml](https://github.com/thomseddon/traefik-forward-auth/blob/master/examples/traefik-v2/swarm/docker-compose-auth-host.yml) and [kubernetes/advanced-separate-pod](https://github.com/thomseddon/traefik-forward-auth/blob/master/examples/traefik-v2/kubernetes/advanced-separate-pod/) which shows how to configure a central auth host, along with some other options.
+Also in the examples directory is [docker-compose-auth-host.yml](examples/traefik-v2/swarm/docker-compose-auth-host.yml) and [kubernetes/advanced-separate-pod](examples/traefik-v2/kubernetes/advanced-separate-pod/) which shows how to configure a central auth host, along with some other options.
 
 #### Provider Setup
 
@@ -166,14 +181,15 @@ Application Options:
   --csrf-cookie-name=                                   CSRF Cookie Name (default: _forward_auth_csrf) [$CSRF_COOKIE_NAME]
   --default-action=[auth|allow]                         Default action (default: auth) [$DEFAULT_ACTION]
   --default-provider=[google|oidc|generic-oauth]        Default provider (default: google) [$DEFAULT_PROVIDER]
-  --domain=                                             Only allow given email domains, can be set multiple times [$DOMAIN]
+  --domain=                                             Only allow given email domains, comma separated, can be set multiple times [$DOMAIN]
   --lifetime=                                           Lifetime in seconds (default: 43200) [$LIFETIME]
   --logout-redirect=                                    URL to redirect to following logout [$LOGOUT_REDIRECT]
   --url-path=                                           Callback URL Path (default: /_oauth) [$URL_PATH]
   --secret=                                             Secret used for signing (required) [$SECRET]
-  --whitelist=                                          Only allow given email addresses, can be set multiple times [$WHITELIST]
+  --whitelist=                                          Only allow given user ID, comma separated, can be set multiple times [$WHITELIST]
   --port=                                               Port to listen on (default: 4181) [$PORT]
   --rule.<name>.<param>=                                Rule definitions, param can be: "action", "rule" or "provider"
+  --trusted-ip-address=                                 List of trusted IP addresses or IP networks (in CIDR notation) that are considered authenticated [$TRUSTED_IP_ADDRESS]
 
 Google Provider:
   --providers.google.client-id=                         Client ID [$PROVIDERS_GOOGLE_CLIENT_ID]
@@ -374,6 +390,17 @@ All options can be supplied in any of the following ways, in the following prece
 
    Note: It is possible to break your redirect flow with rules, please be careful not to create an `allow` rule that matches your redirect_uri unless you know what you're doing. This limitation is being tracked in in #101 and the behaviour will change in future releases.
 
+- `trusted-ip-address`
+
+  This option adds an IP address or an IP network given in CIDR notation to the list of trusted networks. Requests originating
+  from a trusted network are considered authenticated and are never redirected to an OAuth IDP. The option can be used
+  multiple times to add many trusted address ranges.
+
+  * `--trusted-ip-address=2.3.4.5` adds a single IP (`2.3.4.5`) as a trusted IP.
+  * `--trusted-ip-address=30.1.0.0/16` adds the address range from `30.1.0.1` to `30.1.255.254` as a trusted range
+
+  The list of trusted networks is initially empty.
+
 ## Concepts
 
 ### User Restriction
@@ -487,7 +514,7 @@ As the hostname in the `redirect_uri` is dynamically generated based on the orig
 
 #### Auth Host Mode
 
-This is an optional mode of operation that is useful when dealing with a large number of subdomains, it is activated by using the `auth-host` config option (see [this example docker-compose.yml](https://github.com/thomseddon/traefik-forward-auth/blob/master/examples/traefik-v2/swarm/docker-compose-auth-host.yml) or [this kubernetes example](https://github.com/thomseddon/traefik-forward-auth/tree/master/examples/traefik-v2/kubernetes/advanced-separate-pod)).
+This is an optional mode of operation that is useful when dealing with a large number of subdomains, it is activated by using the `auth-host` config option (see [this example docker-compose.yml](examples/traefik-v2/swarm/docker-compose-auth-host.yml) or [this kubernetes example](https://github.com/thomseddon/traefik-forward-auth/tree/master/examples/traefik-v2/kubernetes/advanced-separate-pod)).
 
 For example, if you have a few applications: `app1.test.com`, `app2.test.com`, `appN.test.com`, adding every domain to Google's console can become laborious.
 To utilise an auth host, permit domain level cookies by setting the cookie domain to `test.com` then set the `auth-host` to: `auth.test.com`.
@@ -508,7 +535,7 @@ Two criteria must be met for an `auth-host` to be used:
 1. Request matches given `cookie-domain`
 2. `auth-host` is also subdomain of same `cookie-domain`
 
-Please note: For Auth Host mode to work, you must ensure that requests to your auth-host are routed to the traefik-forward-auth container, as demonstrated with the service labels in the [docker-compose-auth.yml](https://github.com/thomseddon/traefik-forward-auth/blob/master/examples/traefik-v2/swarm/docker-compose-auth-host.yml) example and the [ingressroute resource](https://github.com/thomseddon/traefik-forward-auth/blob/master/examples/traefik-v2/kubernetes/advanced-separate-pod/traefik-forward-auth/ingress.yaml) in a kubernetes example.
+Please note: For Auth Host mode to work, you must ensure that requests to your auth-host are routed to the traefik-forward-auth container, as demonstrated with the service labels in the [docker-compose-auth.yml](examples/traefik-v2/swarm/docker-compose-auth-host.yml) example and the [ingressroute resource](examples/traefik-v2/kubernetes/advanced-separate-pod/traefik-forward-auth/ingress.yaml) in a kubernetes example.
 
 ### Logging Out
 
@@ -524,4 +551,4 @@ Note: This only clears the auth cookie from the users browser and as this servic
 
 ## License
 
-[MIT](https://github.com/thomseddon/traefik-forward-auth/blob/master/LICENSE.md)
+[MIT](LICENSE.md)
