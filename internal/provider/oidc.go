@@ -82,7 +82,7 @@ func (o *OIDC) ExchangeCode(redirectURI, code string) (string, error) {
 }
 
 // GetUser uses the given token and returns a complete provider.User object
-func (o *OIDC) GetUser(token, UserPath string) (string, error) {
+func (o *OIDC) GetUser(token, userPath string) (string, error) {
 	// Parse & Verify ID Token
 	idToken, err := o.verifier.Verify(o.ctx, token)
 	if err != nil {
@@ -95,8 +95,11 @@ func (o *OIDC) GetUser(token, UserPath string) (string, error) {
 		return "", err
 	}
 
-	if claims[UserPath] == nil {
-		return "", fmt.Errorf("no such user path: '%s' in the Claims", UserPath)
+	if user, ok := claims[userPath].(string); ok {
+		return user, nil
 	}
-	return claims[UserPath].(string), nil
+	if email, ok := claims["email"].(string); ok {
+		return email, nil
+	}
+	return "", fmt.Errorf("no such user path: '%s' or 'email' in the claims", userPath)
 }

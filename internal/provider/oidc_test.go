@@ -150,6 +150,29 @@ func TestOIDCGetUserCustom(t *testing.T) {
 	assert.Equal("customValue", user)
 }
 
+func TestOIDCGetUserCustomFallback(t *testing.T) {
+	assert := assert.New(t)
+
+	provider, server, serverURL, key := setupOIDCTest(t, nil)
+	defer server.Close()
+
+	// Generate JWT
+	token := key.sign(t, []byte(`{
+		"iss": "`+serverURL.String()+`",
+		"exp":`+strconv.FormatInt(time.Now().Add(time.Hour).Unix(), 10)+`,
+		"aud": "idtest",
+		"sub": "1",
+		"email": "example@example.com",
+		"email_verified": true,
+		"customField": "customValue"
+	}`))
+
+	// Get user
+	user, err := provider.GetUser(token, "fieldDoesNotExist")
+	assert.Nil(err)
+	assert.Equal("example@example.com", user)
+}
+
 // Utils
 
 // setOIDCTest creates a key, OIDCServer and initilises an OIDC provider
