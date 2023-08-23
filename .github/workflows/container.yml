@@ -2,7 +2,7 @@ name: Build container
 on:
   push:
     branches:
-      - main
+      - master
   pull_request:
 
   # Allow for manually running
