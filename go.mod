@@ -1,4 +1,4 @@
-module github.com/jordemort/traefik-forward-auth
+module github.com/mkska/traefik-forward-auth
 
 go 1.19
 
