@@ -53,7 +53,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          CONTAINER_TAG=$(echo "$RAW_CONTAINER_TAG" | sed 's/[^a-zA-Z0-9]\+/-/')
+          CONTAINER_TAG=$(echo "$RAW_CONTAINER_TAG" | iconv -t ascii//TRANSLIT | sed -E -e 's/[^[:alnum:]]+/-/g' -e 's/^-+|-+$//g' | tr '[:upper:]' '[:lower:]')
           REF_NAME=$(echo "$RAW_REF_NAME" | sed -r 's#^refs/(heads|tags)/##')
           docker buildx build \
             --platform "$BUILD_PLATFORMS" \
