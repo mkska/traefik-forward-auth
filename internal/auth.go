@@ -162,7 +162,7 @@ func redirectBase(r *http.Request) string {
 
 // Return url
 func returnUrl(r *http.Request) string {
-	return fmt.Sprintf("%s%s", redirectBase(r), r.URL.Path)
+	return fmt.Sprintf("%s%s", redirectBase(r), r.URL.RequestURI())
 }
 
 // Get oauth redirect uri
