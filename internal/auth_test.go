@@ -493,23 +493,23 @@ func TestValidateState(t *testing.T) {
 func TestMakeState(t *testing.T) {
 	assert := assert.New(t)
 
-	r := httptest.NewRequest("GET", "http://example.com/hello", nil)
+	r := httptest.NewRequest("GET", "http://example.com/hello?id=123&id2=abc", nil)
 	r.Header.Add("X-Forwarded-Proto", "http")
 
 	// Test with google
 	p := provider.Google{}
 	state := MakeState(r, &p, "nonce")
-	assert.Equal("nonce:google:http://example.com/hello", state)
+	assert.Equal("nonce:google:http://example.com/hello?id=123&id2=abc", state)
 
 	// Test with OIDC
 	p2 := provider.OIDC{}
 	state = MakeState(r, &p2, "nonce")
-	assert.Equal("nonce:oidc:http://example.com/hello", state)
+	assert.Equal("nonce:oidc:http://example.com/hello?id=123&id2=abc", state)
 
 	// Test with Generic OAuth
 	p3 := provider.GenericOAuth{}
 	state = MakeState(r, &p3, "nonce")
-	assert.Equal("nonce:generic-oauth:http://example.com/hello", state)
+	assert.Equal("nonce:generic-oauth:http://example.com/hello?id=123&id2=abc", state)
 }
 
 func TestAuthNonce(t *testing.T) {
