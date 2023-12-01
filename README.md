@@ -2,7 +2,7 @@
 # Traefik Forward Auth [![CI](https://github.com/mkska/traefik-forward-auth/actions/workflows/ci.yml/badge.svg)](https://github.com/mkska/traefik-forward-auth/actions/workflows/ci.yml) [![Go Report Card](https://goreportcard.com/badge/github.com/mkska/traefik-forward-auth)]
 
 
-A minimal forward authentication service that provides OAuth/SSO login and authentication for the [traefik](https://github.com/containous/traefik) reverse proxy/load balancer.
+A minimal forward authentication service that provides OAuth/SSO login and authentication for the [traefik](https://github.com/traefik/traefik) reverse proxy/load balancer.
 
 ## Fork notes
 
@@ -14,6 +14,7 @@ I have merged several pull requests that have not (yet?) been merged upstream:
 - https://github.com/thomseddon/traefik-forward-auth/pull/281
 - https://github.com/thomseddon/traefik-forward-auth/pull/295
 - https://github.com/thomseddon/traefik-forward-auth/pull/327
+- https://github.com/thomseddon/traefik-forward-auth/pull/335
 
 I have also updated all the dependencies, and switched to building with Go 1.19.
 The Dockerfile has been switched from Alpine to using the official Go container for building the binary and a [distroless](https://github.com/GoogleContainerTools/distroless) image for runtime.
@@ -37,7 +38,8 @@ It seems to be a better bet to match against the `X-Forwarded-For` header.
 
 # Contents
 
-- [Traefik Forward Auth !Build Status [![Go Report Card](https://goreportcard.com/badge/github.com/thomseddon/traefik-forward-auth)](https://goreportcard.com/report/github.com/thomseddon/traefik-forward-auth) ![Docker Pulls](https://img.shields.io/docker/pulls/thomseddon/traefik-forward-auth.svg) [![GitHub release](https://img.shields.io/github/release/thomseddon/traefik-forward-auth.svg)](https://GitHub.com/thomseddon/traefik-forward-auth/releases/)](#traefik-forward-auth----)
+- [Traefik Forward Auth  \[\]](#traefik-forward-auth--)
+  - [Fork notes](#fork-notes)
   - [Why?](#why)
 - [Contents](#contents)
   - [Releases](#releases)
@@ -67,9 +69,10 @@ It seems to be a better bet to match against the `X-Forwarded-For` header.
   - [Copyright](#copyright)
   - [License](#license)
 
+
 ## Releases
 
-Releases of this fork are published to the [GitHub Container Registry](https://github.com/jordemort/traefik-forward-auth/pkgs/container/traefik-forward-auth).
+Releases of this fork are published to the [GitHub Container Registry](https://github.com/mkska/traefik-forward-auth/pkgs/container/traefik-forward-auth).
 
 I currently only publish a `latest` tag.
 
