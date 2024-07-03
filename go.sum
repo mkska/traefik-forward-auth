@@ -92,8 +92,8 @@ github.com/thomseddon/go-flags v1.4.1-0.20190507184247-a3629c504486 h1:hk17f4niA
 github.com/thomseddon/go-flags v1.4.1-0.20190507184247-a3629c504486/go.mod h1:NK9eZpNBmSKVxvyB/MExg6jW0Bo9hQyAuCP+b8MJFow=
 github.com/traefik/paerser v0.2.0 h1:zqCLGSXoNlcBd+mzqSCLjon/I6phqIjeJL2xFB2ysgQ=
 github.com/traefik/paerser v0.2.0/go.mod h1:afzaVcgF8A+MpTnPG4wBr4whjanCSYA6vK5RwaYVtRc=
-github.com/traefik/traefik/v2 v2.11.5 h1:whQHLy+vFDZhP6Te5X64Tf14X2UxkJTOl8YGZs9BhZw=
-github.com/traefik/traefik/v2 v2.11.5/go.mod h1:0P7QPOziqHyuZleBtrJ6LoaYFULWcYyb4ledAgsdkUw=
+github.com/traefik/traefik/v2 v2.11.6 h1:+PCf9wGMLqfOyOUu7WZWxkjrzNvvEp1WANMXiYZCF2U=
+github.com/traefik/traefik/v2 v2.11.6/go.mod h1:dAWTe9bpVKrF2wUyysEXY9Jm+I0NJr0IBnpRY7LSwac=
 github.com/vulcand/predicate v1.2.0 h1:uFsW1gcnnR7R+QTID+FVcs0sSYlIGntoGOTb3rQJt50=
 github.com/vulcand/predicate v1.2.0/go.mod h1:VipoNYXny6c8N381zGUWkjuuNHiRbeAZhE7Qm9c+2GA=
 go.opentelemetry.io/proto/otlp v0.7.0/go.mod h1:PqfVotwruBrMGOCsRd/89rSnXhoiJIqeYNgFYFoEGnI=
