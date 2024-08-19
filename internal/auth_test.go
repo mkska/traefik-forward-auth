@@ -266,7 +266,7 @@ func TestAuthValidateRedirect(t *testing.T) {
 	//
 	// With Auth Host
 	//
-	config.AuthHost = "auth.example.com"
+	config.AuthHosts = CommaSeparatedList{"auth.example.com"}
 	config.CookieDomains = []CookieDomain{*NewCookieDomain("example.com")}
 	errStr = "Redirect host does not match any expected hosts (should match cookie domain when using auth host)"
 
