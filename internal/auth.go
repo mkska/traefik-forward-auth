@@ -137,10 +137,10 @@ func ValidateRedirect(r *http.Request, redirect string) (*url.URL, error) {
 	}
 
 	// If we're using an auth domain?
-	if use, base := useAuthDomain(r); use {
+	if use, authHost, _ := useAuthDomain(r); use {
 		// If we are using an auth domain, they redirect must share a common
 		// suffix with the requested redirect
-		if !strings.HasSuffix(redirectURL.Host, base) {
+		if !strings.HasSuffix(redirectURL.Host, authHost) {
 			return nil, errors.New("Redirect host does not match any expected hosts (should match cookie domain when using auth host)")
 		}
 	} else {
