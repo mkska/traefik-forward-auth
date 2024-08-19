@@ -10,15 +10,15 @@ require (
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.9.0
 	github.com/thomseddon/go-flags v1.4.1-0.20190507184247-a3629c504486
-	github.com/traefik/traefik/v2 v2.11.5
-	golang.org/x/oauth2 v0.21.0
+	github.com/traefik/traefik/v2 v2.11.8
+	golang.org/x/oauth2 v0.22.0
 	gopkg.in/square/go-jose.v2 v2.6.0
 )
 
 require (
 	github.com/containous/alice v0.0.0-20181107144136-d83ebdd94cbd // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
-	github.com/gorilla/mux v1.8.0 // indirect
+	github.com/gorilla/mux v1.8.1 // indirect
 	github.com/gravitational/trace v1.1.19 // indirect
 	github.com/jonboulle/clockwork v0.4.0 // indirect
 	github.com/miekg/dns v1.1.59 // indirect
