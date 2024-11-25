@@ -8,7 +8,7 @@ require (
 	github.com/Jeffail/gabs/v2 v2.7.0
 	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/sirupsen/logrus v1.9.3
-	github.com/stretchr/testify v1.9.0
+	github.com/stretchr/testify v1.10.0
 	github.com/thomseddon/go-flags v1.4.1-0.20190507184247-a3629c504486
 	github.com/traefik/traefik/v2 v2.11.8
 	golang.org/x/oauth2 v0.22.0
